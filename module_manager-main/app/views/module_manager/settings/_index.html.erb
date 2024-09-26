@@ -1,0 +1,80 @@
+
+<% @all_modules = Redmine::AccessControl.available_project_modules %>
+
+<% @modules = params['ids'].present? ? @all_modules.select{ |m| pp m; params[:ids].include?(m.to_s) } : @all_modules%>
+
+
+<%= form_tag(module_manager_update_path, :id => 'module_manager_update333') do %>
+<% end %>
+
+
+<div class="hide-when-print">
+  <fieldset id="filters" class="collapsible collapsed">
+    <legend onclick="toggleFieldset(this);" class="icon icon-collapsed"><%= l(:label_filter_plural) %></legend>
+    <div style="display: none;">
+      <%= form_tag(plugin_settings_path('module_manager'), :id=> 'sdf', :method => :get) do %>
+        <fieldset>
+          <legend><%= toggle_checkboxes_link('#filters input[type=checkbox]:enabled') %></legend>
+          <% Redmine::AccessControl.available_project_modules.each do |m| %>
+            <div>
+              <%= check_box_tag "ids[]", m, @modules.include?(m) %>
+              <%= l_or_humanize(m, :prefix => "project_module_") %>
+            </div>
+          <% end %>
+        </fieldset>
+        <p>
+          <%= submit_tag l(:button_apply) %>
+          <%= link_to l(:button_clear),  :class => 'icon icon-reload' %>
+        </p>
+      <% end %>
+
+    </div>
+  </fieldset>
+</div>
+
+
+<%= form_tag(module_manager_update_path, :id => 'module_manager_update') do %>
+  <div class="autoscroll">
+    <table class="list permissions">
+      <thead>
+      <tr>
+        <th></th>
+        <th><%=l(:label_project)%></th>
+        <% @modules.each do |modul| %>
+          <th>
+            <%= link_to_function('',
+                                 "toggleCheckboxesBySelector('input.role-#{modul}')",
+                                 :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}",
+                                 :class => 'icon-only icon-checked') %> <%= l_or_humanize(modul, :prefix => "project_module_")  %>
+          <input type="hidden" value="<%= modul %>" name="all_modules[]">
+          </th>
+        <% end %>
+      </tr>
+      </thead>
+      <tbody>
+      <% project_tree(Project.all, :init_level => true) do |project, level| %>
+        <tr class="<%= "project-#{project.identifier}" %> <%= project.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
+          <td>              <%= link_to_function('',
+                                                 "toggleCheckboxesBySelector('.project-#{project.identifier} input')",
+                                                 :title => "#{l(:button_check_all)}/#{l(:button_uncheck_all)}",
+                                                 :class => 'icon-only icon-checked') %></td>
+          <td class="name">
+
+            <span><%= link_to_project_settings(project, {}, :title => project.short_description) %></span></td>
+          <% @modules.each do |modul| %>
+            <%# if role.setable_permissions.include? permission %>
+            <td title="<%= " (#{project.name})" %>">
+              <%= check_box_tag "enabled_module[#{project.identifier}][]", modul, (project.module_enabled? modul), :id => nil, :class => "role-#{modul}" %>
+            </td>
+            <%# else %>
+            <!--                <td></td>-->
+            <%# end %>
+          <% end %>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </div>
+  <p><%= check_all_links 'module_manager_update' %></p>
+  <p><%= submit_tag l(:button_save) %></p>
+<% end %>
